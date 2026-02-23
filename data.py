@@ -1,18 +1,23 @@
-generators = { #two new generators are added in the renewable scenario, and some existing generators have their capacity modified to reflect the renewable scenario
+generators = {
     'G1':  {'node': 1,  'Pmax_MW': 152, 'Pmin_MW': 0},
     'G2':  {'node': 2,  'Pmax_MW': 152, 'Pmin_MW': 0},
-    'G3':  {'node': 3,  'Pmax_MW': 200, 'Pmin_MW': 0}, #renewable scenario
-    'G4':  {'node': 5,  'Pmax_MW': 200, 'Pmin_MW': 0}, #renewable scenario
-    'G5':  {'node': 7,  'Pmax_MW': 200, 'Pmin_MW': 0}, #renewable scenario
-    'G6':  {'node': 13, 'Pmax_MW': 591, 'Pmin_MW': 0},
-    'G7':  {'node': 15, 'Pmax_MW': 200, 'Pmin_MW': 0},
-    'G8':  {'node': 15, 'Pmax_MW': 155, 'Pmin_MW': 0},
-    'G9':  {'node': 16, 'Pmax_MW': 200, 'Pmin_MW': 0}, #renewable scenario
-    'G10': {'node': 18, 'Pmax_MW': 400, 'Pmin_MW': 0},
-    'G11': {'node': 21, 'Pmax_MW': 200, 'Pmin_MW': 0}, #renewable scenario
-    'G12': {'node': 22, 'Pmax_MW': 300, 'Pmin_MW': 0},
-    'G13': {'node': 23, 'Pmax_MW': 200, 'Pmin_MW': 0}, #renewable scenario
-    'G14': {'node': 24, 'Pmax_MW': 350, 'Pmin_MW': 0},
+    'G3':  {'node': 7,  'Pmax_MW': 350, 'Pmin_MW': 0},
+    'G4':  {'node': 13, 'Pmax_MW': 591, 'Pmin_MW': 0},
+    'G5':  {'node': 15, 'Pmax_MW': 60,  'Pmin_MW': 0},
+    'G6':  {'node': 15, 'Pmax_MW': 155, 'Pmin_MW': 0},
+    'G7':  {'node': 16, 'Pmax_MW': 155, 'Pmin_MW': 0},
+    'G8':  {'node': 18, 'Pmax_MW': 400, 'Pmin_MW': 0},
+    'G9':  {'node': 21, 'Pmax_MW': 400, 'Pmin_MW': 0},
+    'G10': {'node': 22, 'Pmax_MW': 300, 'Pmin_MW': 0},
+    'G11': {'node': 23, 'Pmax_MW': 310, 'Pmin_MW': 0},
+    'G12': {'node': 23, 'Pmax_MW': 350, 'Pmin_MW': 0},
+    # Wind farms (bid price = 0, capacity varies with forecast)
+    'W1':  {'node': 3,  'Pmax_MW': 200, 'Pmin_MW': 0},
+    'W2':  {'node': 5,  'Pmax_MW': 200, 'Pmin_MW': 0},
+    'W3':  {'node': 7,  'Pmax_MW': 200, 'Pmin_MW': 0},
+    'W4':  {'node': 16, 'Pmax_MW': 200, 'Pmin_MW': 0},
+    'W5':  {'node': 21, 'Pmax_MW': 200, 'Pmin_MW': 0},
+    'W6':  {'node': 23, 'Pmax_MW': 200, 'Pmin_MW': 0},
 }
 
 load_profile = { #this is in per hour, in MW
