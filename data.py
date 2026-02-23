@@ -159,7 +159,7 @@ price_profile = { #this is in per hour, in EUR/MWh, taken from Nordpool for 24-0
 }
 
 
-Prices_for_loads ={ # this is the nordpool prices randomized for each load for each hour in EUR/MWh.
+Prices_for_loads ={ # this is the nordpool prices randomized for each load by multiplying by 0.7 and 1.2 for each hour in EUR/MWh. 
   1: [87.73, 61.30, 72.05, 69.82, 91.90, 89.33, 98.60, 63.96, 78.37, 61.50, 69.63, 81.96, 61.36, 68.77, 88.18, 83.66, 69.70],
   2: [84.54, 93.90, 59.78, 93.75, 89.17, 73.96, 66.11, 100.18, 73.81, 63.44, 63.61, 95.52, 85.16, 93.80, 90.51, 82.29, 100.86],
   3: [76.71, 84.19, 96.15, 87.06, 97.55, 85.28, 90.77, 62.36, 70.21, 72.86, 63.82, 70.42, 64.74, 72.37, 87.80, 76.12, 76.35],
