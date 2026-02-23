@@ -106,20 +106,24 @@ transmission_lines = { #some lines have their capacity modified to reflect the r
 # G3, G4, G5, G9, G11, G13 are renewables (marginal cost = 0)
 
 generator_bid_prices = {
-    'G1':  {h: 20 for h in range(1, 25)},  # conventional
-    'G2':  {h: 20 for h in range(1, 25)},  # conventional
-    'G3':  {h: 0  for h in range(1, 25)},  # renewable
-    'G4':  {h: 0  for h in range(1, 25)},  # renewable
-    'G5':  {h: 0  for h in range(1, 25)},  # renewable
-    'G6':  {h: 20 for h in range(1, 25)},  # conventional
-    'G7':  {h: 20 for h in range(1, 25)},  # conventional
-    'G8':  {h: 100 for h in range(1, 25)},  # conventional expensive
-    'G9':  {h: 0  for h in range(1, 25)},  # renewable
-    'G10': {h: 20 for h in range(1, 25)},  # conventional
-    'G11': {h: 0  for h in range(1, 25)},  # renewable
-    'G12': {h: 70 for h in range(1, 25)},  # conventional expensive
-    'G13': {h: 0  for h in range(1, 25)},  # renewable
-    'G14': {h: 30 for h in range(1, 25)},  # conventional mid range
+    'G1':  {h: 13.32 for h in range(1, 25)},  # conventional
+    'G2':  {h: 13.32 for h in range(1, 25)},  # conventional
+    'G3':  {h: 20.7  for h in range(1, 25)},  # conventional
+    'G4':  {h: 20.93  for h in range(1, 25)},  # conventional
+    'G5':  {h: 26.11  for h in range(1, 25)},  # conventional
+    'G6':  {h: 10.52 for h in range(1, 25)},  # conventional
+    'G7':  {h: 10.52 for h in range(1, 25)},  # conventional
+    'G8':  {h: 6.02 for h in range(1, 25)},  # conventional
+    'G9':  {h: 5.47  for h in range(1, 25)},  # conventional
+    'G10': {h: 0 for h in range(1, 25)},  # conventional
+    'G11': {h: 10.52  for h in range(1, 25)},  # conventional
+    'G12': {h: 10.89 for h in range(1, 25)},  # conventional
+    'W1': {h: 0  for h in range(1, 25)},  # renewable
+    'W2': {h: 0  for h in range(1, 25)},  # renewable
+    'W3': {h: 0  for h in range(1, 25)},  # renewable
+    'W4': {h: 0  for h in range(1, 25)},  # renewable
+    'W5': {h: 0  for h in range(1, 25)},  # renewable
+    'W6': {h: 0  for h in range(1, 25)},  # renewable
 }
 
 load_bid_prices = {
