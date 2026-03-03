@@ -99,11 +99,48 @@ transmission_lines = { #some lines have their capacity modified to reflect the r
     'L29': {'from': 17, 'to': 18, 'reactance': 0.0143, 'capacity_MVA': 500},
     'L30': {'from': 17, 'to': 22, 'reactance': 0.1069, 'capacity_MVA': 500},
     'L31': {'from': 18, 'to': 21, 'reactance': 0.0132, 'capacity_MVA': 1000},
-    'L32': {'from': 19, 'to': 20, 'reactance': 0.0203, 'capacity_MVA': 1000},
-    'L33': {'from': 20, 'to': 23, 'reactance': 0.0112, 'capacity_MVA': 1000},
+    'L32': {'from': 19, 'to': 20, 'reactance': 0.0203, 'capacity_MVA': 1000}, 
+    'L33': {'from': 20, 'to': 23, 'reactance': 0.0112, 'capacity_MVA': 1000}, 
     'L34': {'from': 21, 'to': 22, 'reactance': 0.0692, 'capacity_MVA': 500},
 }
 
+#Sensitivity analysis copy table from step 3. KEEP FOR REPORTING PURPOSES, DO NOT MODIFY
+transmission_lines_sensitivity = { #some lines have their capacity modified to reflect the renewable scenario
+    'L1':  {'from': 1,  'to': 2,  'reactance': 0.0146, 'capacity_MVA': 17},
+    'L2':  {'from': 1,  'to': 3,  'reactance': 0.2253, 'capacity_MVA': 17},
+    'L3':  {'from': 1,  'to': 5,  'reactance': 0.0907, 'capacity_MVA': 35},
+    'L4':  {'from': 2,  'to': 4,  'reactance': 0.1356, 'capacity_MVA': 17},
+    'L5':  {'from': 2,  'to': 6,  'reactance': 0.205,  'capacity_MVA': 17},
+    'L6':  {'from': 3,  'to': 9,  'reactance': 0.1271, 'capacity_MVA': 17},
+    'L7':  {'from': 3,  'to': 24, 'reactance': 0.084,  'capacity_MVA': 40},
+    'L8':  {'from': 4,  'to': 9,  'reactance': 0.111,  'capacity_MVA': 17},
+    'L9':  {'from': 5,  'to': 10, 'reactance': 0.094,  'capacity_MVA': 35},
+    'L10': {'from': 6,  'to': 10, 'reactance': 0.0642, 'capacity_MVA': 17},
+    'L11': {'from': 7,  'to': 8,  'reactance': 0.0652, 'capacity_MVA': 35},
+    'L12': {'from': 8,  'to': 9,  'reactance': 0.1762, 'capacity_MVA': 17},
+    'L13': {'from': 8,  'to': 10, 'reactance': 0.1762, 'capacity_MVA': 17},
+    'L14': {'from': 9,  'to': 11, 'reactance': 0.084,  'capacity_MVA': 40},
+    'L15': {'from': 9,  'to': 12, 'reactance': 0.084,  'capacity_MVA': 40},
+    'L16': {'from': 10, 'to': 11, 'reactance': 0.084,  'capacity_MVA': 40},
+    'L17': {'from': 10, 'to': 12, 'reactance': 0.084,  'capacity_MVA': 40},
+    'L18': {'from': 11, 'to': 13, 'reactance': 0.0488, 'capacity_MVA': 50},
+    'L19': {'from': 11, 'to': 14, 'reactance': 0.0426, 'capacity_MVA': 50},
+    'L20': {'from': 12, 'to': 13, 'reactance': 0.0488, 'capacity_MVA': 50},
+    'L21': {'from': 12, 'to': 23, 'reactance': 0.0985, 'capacity_MVA': 50},
+    'L22': {'from': 13, 'to': 23, 'reactance': 0.0884, 'capacity_MVA': 25}, #renewable scenario
+    'L23': {'from': 14, 'to': 16, 'reactance': 0.0594, 'capacity_MVA': 25}, #renewable scenario
+    'L24': {'from': 15, 'to': 16, 'reactance': 0.0172, 'capacity_MVA': 50},
+    'L25': {'from': 15, 'to': 21, 'reactance': 0.0249, 'capacity_MVA': 40}, #renewable scenario
+    'L26': {'from': 15, 'to': 24, 'reactance': 0.0529, 'capacity_MVA': 50},
+    'L27': {'from': 16, 'to': 17, 'reactance': 0.0263, 'capacity_MVA': 50},
+    'L28': {'from': 16, 'to': 19, 'reactance': 0.0234, 'capacity_MVA': 50},
+    'L29': {'from': 17, 'to': 18, 'reactance': 0.0143, 'capacity_MVA': 50},
+    'L30': {'from': 17, 'to': 22, 'reactance': 0.1069, 'capacity_MVA': 500},
+    'L31': {'from': 18, 'to': 21, 'reactance': 0.0132, 'capacity_MVA': 1000},
+    'L32': {'from': 19, 'to': 20, 'reactance': 0.0203, 'capacity_MVA': 1000}, 
+    'L33': {'from': 20, 'to': 23, 'reactance': 0.0112, 'capacity_MVA': 1000}, 
+    'L34': {'from': 21, 'to': 22, 'reactance': 0.0692, 'capacity_MVA': 500},
+}
 
 # Bid prices ($/MWh) - can be updated per hour
 # Generators: set to marginal cost (renewables = 0)
