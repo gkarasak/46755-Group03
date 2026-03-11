@@ -20,6 +20,13 @@ generators = {
     'W6':  {'node': 23, 'Pmax_MW': 200, 'Pmin_MW': 0},
 }
 
+Zonal_networks = {
+    'Z1': {'nodes': [18,21,23,22,20,19,16,17,15,24]},
+    'Z2': {'nodes': [3,4,9,5,2,1]},
+    'Z3': {'nodes': [14,11,12,13,10,6,8,7]},
+    }
+
+
 load_profile = { #this is in per hour, in MW
     1:  1775.835,
     2:  1669.815,
