@@ -154,25 +154,27 @@ transmission_lines_sensitivity = { #some lines have their capacity modified to r
 # Loads: set high to ensure most demand is served
 # G3, G4, G5, G9, G11, G13 are renewables (marginal cost = 0)
 
+#multiplied the input data from the main source by 0.87 as per 13/03/2026 to change to eur/MWh
+
 generator_bid_prices = {
-    'G1':  {h: 13.32 for h in range(1, 25)},  # conventional
-    'G2':  {h: 13.32 for h in range(1, 25)},  # conventional
-    'G3':  {h: 20.7  for h in range(1, 25)},  # conventional
-    'G4':  {h: 20.93  for h in range(1, 25)},  # conventional
-    'G5':  {h: 26.11  for h in range(1, 25)},  # conventional
-    'G6':  {h: 10.52 for h in range(1, 25)},  # conventional
-    'G7':  {h: 10.52 for h in range(1, 25)},  # conventional
-    'G8':  {h: 6.02 for h in range(1, 25)},  # conventional
-    'G9':  {h: 5.47  for h in range(1, 25)},  # conventional
-    'G10': {h: 0 for h in range(1, 25)},  # conventional
-    'G11': {h: 10.52  for h in range(1, 25)},  # conventional
-    'G12': {h: 10.89 for h in range(1, 25)},  # conventional
-    'W1': {h: 0  for h in range(1, 25)},  # renewable
-    'W2': {h: 0  for h in range(1, 25)},  # renewable
-    'W3': {h: 0  for h in range(1, 25)},  # renewable
-    'W4': {h: 0  for h in range(1, 25)},  # renewable
-    'W5': {h: 0  for h in range(1, 25)},  # renewable
-    'W6': {h: 0  for h in range(1, 25)},  # renewable
+    'G1':  {h: 11.59 for h in range(1, 25)},  # conventional
+    'G2':  {h: 11.59 for h in range(1, 25)},  # conventional
+    'G3':  {h: 18.01 for h in range(1, 25)},  # conventional
+    'G4':  {h: 18.21 for h in range(1, 25)},  # conventional
+    'G5':  {h: 22.72 for h in range(1, 25)},  # conventional
+    'G6':  {h: 9.15  for h in range(1, 25)},  # conventional
+    'G7':  {h: 9.15  for h in range(1, 25)},  # conventional
+    'G8':  {h: 5.24  for h in range(1, 25)},  # conventional
+    'G9':  {h: 4.76  for h in range(1, 25)},  # conventional
+    'G10': {h: 0     for h in range(1, 25)},  # conventional
+    'G11': {h: 9.15  for h in range(1, 25)},  # conventional
+    'G12': {h: 9.47  for h in range(1, 25)},  # conventional
+    'W1':  {h: 0     for h in range(1, 25)},  # renewable
+    'W2':  {h: 0     for h in range(1, 25)},  # renewable
+    'W3':  {h: 0     for h in range(1, 25)},  # renewable
+    'W4':  {h: 0     for h in range(1, 25)},  # renewable
+    'W5':  {h: 0     for h in range(1, 25)},  # renewable
+    'W6':  {h: 0     for h in range(1, 25)},  # renewable
 }
 
 price_profile = { #this is in per hour, in EUR/MWh, taken from Nordpool for 24-02-2026 and averaged per hour
