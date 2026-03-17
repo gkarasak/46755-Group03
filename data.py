@@ -141,7 +141,7 @@ generator_bid_prices = {
     'W6':  {h: 0     for h in range(1, 25)},  # renewable
 }
 
-price_profile = { # this is in per hour, in EUR/MWh, taken from Nordpool for 23-03-2025
+price_profile = { # this is in per hour, in EUR/MWh, taken from ????
 1: 3.99,
 2: 5.06,
 3: 3.97,
