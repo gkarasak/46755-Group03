@@ -216,7 +216,7 @@ def run_market_model(P_ch, P_dis, E_max, plot_results=False, analyze_prices=Fals
         plt.title("Storage Operation")
         plt.legend()
         plt.grid()
-        plt.show()
+        #plt.show()
 
         # Plot stored energy level over 24 hours
         plt.figure(figsize=(10, 5))
@@ -225,7 +225,7 @@ def run_market_model(P_ch, P_dis, E_max, plot_results=False, analyze_prices=Fals
         plt.ylabel("Energy (MWh)")
         plt.title("Stored Energy Level")
         plt.grid()
-        plt.show()
+        #plt.show()
 
     return prices_with_storage
 
@@ -266,7 +266,7 @@ plt.title("Effect of Storage Energy Capacity on Peak Electricity Price")
 plt.xlabel("Storage Capacity (MWh)")
 plt.ylabel("Peak Market Price (€/MWh)")
 plt.grid(True)
-plt.show()
+#plt.show()
 
 
 # ==========================================================
@@ -291,7 +291,7 @@ plt.title("Effect of Charging Power on Peak Electricity Price")
 plt.xlabel("Charging Power Limit (MW)")
 plt.ylabel("Peak Market Price (€/MWh)")
 plt.grid(True)
-plt.show()
+#plt.show()
 
 
 # ==========================================================
@@ -316,4 +316,4 @@ plt.title("Effect of Discharging Power on Peak Electricity Price")
 plt.xlabel("Discharging Power Limit (MW)")
 plt.ylabel("Peak Market Price (€/MWh)")
 plt.grid(True)
-plt.show()
+#plt.show()
