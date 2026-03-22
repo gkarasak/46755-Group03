@@ -1,133 +1,93 @@
+# ==========================================================
+# STEP 2: MULTI-HOUR MARKET MODEL WITH STORAGE
+# ==========================================================
 
-# Wrap model into a function to allow sensitivity analysis by varying storage parameters
-def run_market_model(P_ch, P_dis, E_max, plot_results=False, analyze_prices=False):
+import gurobipy as gp
+from gurobipy import GRB
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-    import gurobipy as gp
-    from gurobipy import GRB
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import os
+plt.style.use("seaborn-v0_8-whitegrid")
 
-    # 24 hours in a day
-    T = range(1, 25)
+T = range(1, 25)
 
-    # ---------------------------------------------------------
-    # Import wind data
-    # ---------------------------------------------------------
-    # Read capacity factor (CF) scenarios for each of the 6 wind zones
-    # Each CSV contains multiple scenarios — we average across all scenarios per hour
-    # Rows 1:25 correspond to hours 1-24, columns 1: are the scenario values
-    # Final CF is a 24-element series representing the average hourly wind output fraction
+# ---------------------------------------------------------
+# LOAD WIND DATA
+# ---------------------------------------------------------
 
-    W1_data = pd.read_csv(r'data_from_Jakob\scen_zone1.csv')
-    W1_CF = W1_data.iloc[1:25, 1:].mean(axis=1)
+def load_wind_data():
 
-    W2_data = pd.read_csv(r'data_from_Jakob\scen_zone2.csv')
-    W2_CF = W2_data.iloc[1:25, 1:].mean(axis=1)
+    W1 = pd.read_csv(r'data_from_Jakob\scen_zone1.csv').iloc[1:25,1:].mean(axis=1)
+    W2 = pd.read_csv(r'data_from_Jakob\scen_zone2.csv').iloc[1:25,1:].mean(axis=1)
+    W3 = pd.read_csv(r'data_from_Jakob\scen_zone3.csv').iloc[1:25,1:].mean(axis=1)
+    W4 = pd.read_csv(r'data_from_Jakob\scen_zone4.csv').iloc[1:25,1:].mean(axis=1)
+    W5 = pd.read_csv(r'data_from_Jakob\scen_zone5.csv').iloc[1:25,1:].mean(axis=1)
+    W6 = pd.read_csv(r'data_from_Jakob\scen_zone6.csv').iloc[1:25,1:].mean(axis=1)
 
-    W3_data = pd.read_csv(r'data_from_Jakob\scen_zone3.csv')
-    W3_CF = W3_data.iloc[1:25, 1:].mean(axis=1)
+    return [W1, W2, W3, W4, W5, W6]
 
-    W4_data = pd.read_csv(r'data_from_Jakob\scen_zone4.csv')
-    W4_CF = W4_data.iloc[1:25, 1:].mean(axis=1)
 
-    W5_data = pd.read_csv(r'data_from_Jakob\scen_zone5.csv')
-    W5_CF = W5_data.iloc[1:25, 1:].mean(axis=1)
+Wind_CF = load_wind_data()
 
-    W6_data = pd.read_csv(r'data_from_Jakob\scen_zone6.csv')
-    W6_CF = W6_data.iloc[1:25, 1:].mean(axis=1)
+# ---------------------------------------------------------
+# MARKET MODEL
+# ---------------------------------------------------------
 
-    # Collect all wind CF series into a list for easy indexing
-    Wind_CF = [W1_CF, W2_CF, W3_CF, W4_CF, W5_CF, W6_CF]
-
-    # ---------------------------------------------------------
-    # Create Gurobi model
-    # ---------------------------------------------------------
+def run_market_model(P_ch, P_dis, E_max, plot_results=False):
 
     model = gp.Model("Copperplate")
 
-    # Storage round-trip efficiency parameters
-    eta_ch  = 0.90   # charging efficiency (90%)
-    eta_dis = 0.95   # discharging efficiency (95%)
+    eta_ch = 0.90
+    eta_dis = 0.95
 
-    # Storage decision variables for each hour t:
-    # p_ch[t]  — power charged into storage [MW], bounded by max charging power P_ch
-    # p_dis[t] — power discharged from storage [MW], bounded by max discharging power P_dis
-    # e[t]     — stored energy level at end of hour t [MWh], bounded by energy capacity E_max
-    p_ch  = {t: model.addVar(lb=0, ub=P_ch,  name=f"p_ch_{t}")  for t in T}
-    p_dis = {t: model.addVar(lb=0, ub=P_dis, name=f"p_dis_{t}") for t in T}
-    e     = {t: model.addVar(lb=0, ub=E_max, name=f"e_{t}")     for t in T}
+    # ------------------------------------------------------
+    # STORAGE VARIABLES
+    # ------------------------------------------------------
 
-    # ---------------------------------------------------------
-    # Load system data
-    # ---------------------------------------------------------
+    p_ch = {t: model.addVar(lb=0, ub=P_ch) for t in T}
+    p_dis = {t: model.addVar(lb=0, ub=P_dis) for t in T}
+    e = {t: model.addVar(lb=0, ub=E_max) for t in T}
 
-    from data import load_distribution, load_profile, generators, generator_bid_prices
-    from data import Prices_for_loads
+    from data import load_distribution, load_profile, generators, generator_bid_prices, Prices_for_loads
 
-    # Generator and load variable name lists
-    VARIABLES      = list(generators.keys())
+    VARIABLES = list(generators.keys())
     LOAD_VARIABLES = list(load_distribution.keys())
 
-    # Generator bid prices (marginal costs) — extracted from hour 1 of each generator's price dict
     Generation_price = [v[1] for v in generator_bid_prices.values()]
-    objective_coeff  = {VARIABLES[i]: Generation_price[i] for i in range(len(VARIABLES))}
+    objective_coeff = {VARIABLES[i]: Generation_price[i] for i in range(len(VARIABLES))}
 
-    # Load distribution percentages and hourly total load [MW]
     Load_percentage = [v['percent'] for v in load_distribution.values()]
-    Load_t          = {t: load_profile[t] for t in T}
+    Load_t = {t: load_profile[t] for t in T}
 
-    # Distribute total hourly load across individual load nodes by their percentage share
-    Load_node_t = {
-        t: [Load_t[t] * (i / 100) for i in Load_percentage]
-        for t in T
-    }
+    Load_node_t = {t: [Load_t[t]*(i/100) for i in Load_percentage] for t in T}
 
-    # Demand bid prices per load per hour — sorted descending (highest willingness to pay first)
-    # These represent the value consumers place on electricity [€/MWh]
     Load_coefficients = {}
     for t in T:
         prices_t = np.array(sorted(Prices_for_loads[t], reverse=True))
         for i, l in enumerate(LOAD_VARIABLES):
             Load_coefficients[(l, t)] = prices_t[i]
 
-    # Maximum generation capacity per conventional generator [MW]
-    Generator_UB = {
-        k: v['Pmax_MW']
-        for k, v in generators.items()
-        if k.startswith('G')
-    }
+    Generator_UB = {k: v['Pmax_MW'] for k, v in generators.items() if k.startswith('G')}
 
-    # Wind generation upper bounds per hour: CF * installed capacity (200 MW per farm)
     Wind_UB_t = {
-        t: np.array([Wind_CF[i].iloc[t - 1] for i in range(6)]) * 200
+        t: np.array([Wind_CF[i].iloc[t-1] for i in range(6)]) * 200
         for t in T
     }
 
-    # ---------------------------------------------------------
-    # Decision variables — generation and demand
-    # ---------------------------------------------------------
+    # ------------------------------------------------------
+    # GENERATION & LOAD VARIABLES
+    # ------------------------------------------------------
+    variables = {(v, t): model.addVar(lb=0) for v in VARIABLES for t in T}
 
-    # Generation dispatch variables [MW] for each generator and hour
-    variables = {
-        (v, t): model.addVar(lb=0, name=f"{v}_{t}")
-        for v in VARIABLES for t in T
-    }
-
-    # Load served variables [MW] for each load and hour, bounded by their node's share of total load
+    # LOAD VARIABLES
     load_variables = {
-        (l, t): model.addVar(lb=0, ub=Load_node_t[t][i], name=f"{l}_{t}")
+        (l, t): model.addVar(lb=0, ub=Load_node_t[t][i])
         for i, l in enumerate(LOAD_VARIABLES)
         for t in T
     }
 
-    # ---------------------------------------------------------
-    # Objective — maximise social welfare
-    # ---------------------------------------------------------
-    # Social welfare = consumer utility (value of demand served) - generation cost
-    # This is the standard market welfare maximisation formulation
-
+    # OBJECTIVE FUNCTION
     objective = gp.quicksum(
         Load_coefficients[(l, t)] * load_variables[(l, t)]
         for l in LOAD_VARIABLES for t in T
@@ -138,127 +98,322 @@ def run_market_model(P_ch, P_dis, E_max, plot_results=False, analyze_prices=Fals
 
     model.setObjective(objective, GRB.MAXIMIZE)
 
-    # ---------------------------------------------------------
-    # Generator capacity constraints
-    # ---------------------------------------------------------
-
-    # Conventional generators: dispatch <= Pmax
+    # GENERATOR LIMITS
     for v in VARIABLES:
         for t in T:
             if v in Generator_UB:
                 model.addConstr(variables[(v, t)] <= Generator_UB[v])
 
-    # Wind farms: dispatch <= CF * installed capacity (varies by hour)
+    # WIND LIMITS
     for t in T:
         for i in range(6):
             wind_var = VARIABLES[-6 + i]
             model.addConstr(variables[(wind_var, t)] <= Wind_UB_t[t][i])
 
-    # ---------------------------------------------------------
-    # Power balance constraint (copperplate — no transmission limits)
-    # ---------------------------------------------------------
-    # For each hour: total generation + storage discharge - storage charge = total demand served
-    # The dual variable (shadow price) of this constraint is the market clearing price
-
+    # POWER BALANCE
     balance = {}
     for t in T:
         balance[t] = model.addConstr(
             gp.quicksum(variables[(v, t)] for v in VARIABLES)
             + p_dis[t] - p_ch[t]
             ==
-            gp.quicksum(load_variables[(l, t)] for l in LOAD_VARIABLES),
-            name=f"balance_{t}"
+            gp.quicksum(load_variables[(l, t)] for l in LOAD_VARIABLES)
         )
 
-    # ---------------------------------------------------------
-    # Storage energy dynamics
-    # ---------------------------------------------------------
-    # Hour 1: energy stored = energy charged * efficiency - energy discharged / efficiency
-    # Subsequent hours: energy carried over from previous hour plus net charge/discharge
-    # Final hour: storage must return to empty (e[24] = 0) to avoid end-of-horizon effects
-
-    model.addConstr(e[1] == p_ch[1] * eta_ch - p_dis[1] / eta_dis)
+    # STORAGE DYNAMICS
+    model.addConstr(e[1] == p_ch[1]*eta_ch - p_dis[1]/eta_dis)
 
     for t in range(2, 25):
-        model.addConstr(
-            e[t] == e[t - 1] + p_ch[t] * eta_ch - p_dis[t] / eta_dis
-        )
+        model.addConstr(e[t] == e[t-1] + p_ch[t]*eta_ch - p_dis[t]/eta_dis)
 
-    # End-of-horizon constraint: storage must be empty at end of day 
     model.addConstr(e[24] == 0)
-
-    # ---------------------------------------------------------
-    # Solve
-    # ---------------------------------------------------------
 
     model.optimize()
 
-    # Extract market clearing prices as the negative dual of the balance constraint
-    # (Gurobi convention: dual of equality constraint has sign depending on formulation)
-    prices_with_storage = {t: -balance[t].Pi for t in T}
+    # PRICES
+    prices = {t: -balance[t].Pi for t in T}
+
+    price_table = pd.DataFrame({
+        "Hour": list(T),
+        "Market Price (€/MWh)": [prices[t] for t in T]
+    })
+
+    print(price_table)
+
+    # ------------------------------------------------------
+    # MARGINAL GENERATOR
+    # ------------------------------------------------------
+
+    marginal_info = {}
+
+    for t in T:
+        active_generators = []
+
+        for v in VARIABLES:
+            gen = variables[(v, t)].X
+
+            if gen > 1e-3:
+                if v in Generator_UB:
+                    if gen < Generator_UB[v] - 1e-3:
+                        active_generators.append((v, objective_coeff[v]))
+                else:
+                    active_generators.append((v, objective_coeff[v]))
+
+        if active_generators:
+            marginal = max(active_generators, key=lambda x: x[1])
+            marginal_info[t] = marginal
+        else:
+            marginal_info[t] = ("None", None)
+
+    # Compare price vs marginal cost
+    print("\n=== Price vs Marginal Cost ===")
+
+    for t in T:
+        gen_name, gen_cost = marginal_info[t]
+        print(f"Hour {t}: Price = {prices[t]:.2f}, Marginal cost = {gen_cost}, Generator = {gen_name}")
+
+    # ------------------------------------------------------
+    # STORAGE ACTIVITY
+    # ------------------------------------------------------
+
+    print("\n=== Storage Activity ===")
+
+    for t in T:
+        print(f"Hour {t}: Charge = {p_ch[t].X:.2f}, Discharge = {p_dis[t].X:.2f}")
+
+    # ------------------------------------------------------
+    # PROFITS
+    # ------------------------------------------------------
+
+    # PRODUCERS PROFITS
+    profits = {}
+
+    for v in VARIABLES:
+        profits[v] = sum(
+            (prices[t] - objective_coeff[v]) * variables[(v, t)].X
+            for t in T
+        )
+
+    profit_table = pd.DataFrame({
+        "Generator": list(profits.keys()),
+        "Profit (€)": list(profits.values())
+    })
+
+    print("\n=== Producer Profits ===")
+    print(profit_table)
+
+    # STORAGE PROFIT
+    storage_profit = sum(
+        prices[t] * (p_dis[t].X - p_ch[t].X)
+        for t in T
+    )
+
+    print(f"\nStorage Profit: {storage_profit:.2f} €")
+
+    # CHARGE/DISCHARGE
+    charge = [p_ch[t].X for t in T]
+    discharge = [p_dis[t].X for t in T]
+
+    total_supply = [sum(variables[(v, t)].X for v in VARIABLES) for t in T]
+    total_demand = [sum(load_variables[(l, t)].X for l in LOAD_VARIABLES) for t in T]
+
+    # SOC
+    soc = [e[t].X for t in T]
+
+    # ------------------------------------------------------
+    # SOCIAL WELFARE
+    # ------------------------------------------------------
+
+    # Total utility
+    total_utility = sum(
+        Load_coefficients[(l, t)] * load_variables[(l, t)].X
+        for l in LOAD_VARIABLES for t in T
+    )
+
+    # Total generation cost
+    total_cost = sum(
+        objective_coeff[v] * variables[(v, t)].X
+        for v in VARIABLES for t in T
+    )
+
+    # Social welfare
+    social_welfare = total_utility - total_cost
+
+    print(f"Total Utility: {total_utility:.2f} €")
+    print(f"Total Generation Cost: {total_cost:.2f} €")
+    print(f"Social Welfare: {social_welfare:.2f} €")
 
     # ---------------------------------------------------------
-    # Optional plots
+    # PLOTTING
     # ---------------------------------------------------------
 
     if plot_results:
 
-        storage_charge    = [p_ch[t].X  for t in T]
-        storage_discharge = [p_dis[t].X for t in T]
-        storage_energy    = [e[t].X     for t in T]
+        hours = list(T)
+
+        plt.rcParams.update({
+            "font.size": 18,
+            "axes.titlesize": 18,
+            "axes.labelsize": 14,
+            "xtick.labelsize": 14,
+            "ytick.labelsize": 14,
+            "legend.fontsize": 14,
+        })
 
         # Plot charging and discharging power profile over 24 hours
         plt.figure(figsize=(10, 5))
-        plt.plot(T, storage_charge,    label="Charging")
-        plt.plot(T, storage_discharge, label="Discharging")
+        plt.plot(hours, charge,    label="Charging")      # FIX: was storage_charge
+        plt.plot(hours, discharge, label="Discharging")   # FIX: was storage_discharge
         plt.xlabel("Hour")
         plt.ylabel("Power (MW)")
         plt.title("Storage Operation")
         plt.legend()
         plt.grid()
-        #plt.show()
+        # plt.show()
 
         # Plot stored energy level over 24 hours
         plt.figure(figsize=(10, 5))
-        plt.plot(T, storage_energy, marker='o')
+        plt.plot(hours, soc, marker='o')                  # FIX: was storage_energy
         plt.xlabel("Hour")
         plt.ylabel("Energy (MWh)")
         plt.title("Stored Energy Level")
         plt.grid()
-        #plt.show()
+        # plt.show()
 
-    return prices_with_storage
+        # Combined supply/demand + storage figure
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+        # --------------------------
+        # TOP: Supply/Demand + Price
+        # --------------------------
+
+        ax1.plot(hours, total_supply,
+                 color="tab:green",
+                 linewidth=2.5,
+                 label="Total Supply")
+
+        ax1.plot(hours, total_demand,
+                 color="tab:red",
+                 linewidth=2.5,
+                 label="Total Demand")
+
+        ax1.set_ylabel("Power (MW)")
+
+        ax_price = ax1.twinx()
+
+        ax_price.plot(hours,
+                      list(prices.values()),
+                      color="black",
+                      marker="o",
+                      linewidth=2,
+                      label="Market Price")
+
+        ax_price.set_ylabel("Price (€/MWh)")
+        ax_price.set_yticks(np.arange(5, 10.5, 1))
+
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax_price.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
+
+        # --------------------------
+        # BOTTOM: Storage Operation
+        # --------------------------
+
+        ax2.bar(hours, charge,
+                width=0.5,
+                alpha=0.6,
+                color="tab:blue",
+                label="Charging")
+
+        ax2.bar(hours, [-d for d in discharge],
+                width=0.5,
+                alpha=0.7,
+                color="tab:orange",
+                label="Discharging")
+
+        ax2.set_ylabel("Storage Power (MW)")
+        ax2.set_xlabel("Hour")
+        ax2.axhline(0, color="black", linewidth=1)
+
+        ax_soc = ax2.twinx()
+
+        ax_soc.plot(hours, soc,
+                    color="black",
+                    linestyle="--",
+                    linewidth=2,
+                    marker="o",
+                    label="State of Charge")
+
+        ax_soc.set_ylabel("Energy (MWh)")
+        ax_soc.set_yticks(np.arange(0, 450, 50))
+
+        lines1, labels1 = ax2.get_legend_handles_labels()
+        lines2, labels2 = ax_soc.get_legend_handles_labels()
+        ax2.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+
+        plt.tight_layout()
+        plt.savefig("Results/Step2_market_model.png")
+        plt.close()
+
+    return list(prices.values()), charge, discharge, soc
 
 
-# ==========================================================
-# BASE RUN — default storage parameters
-# ==========================================================
+# ---------------------------------------------------------
+# BASE RUN
+# ---------------------------------------------------------
 
-run_market_model(
-    P_ch=100,
-    P_dis=100,
-    E_max=400,
-    plot_results=True
-)
+run_market_model(100, 100, 400, plot_results=True)
 
+# ---------------------------------------------------------
+# SENSITIVITY ANALYSIS
+# ---------------------------------------------------------
+
+title_size = 18
+label_size = 14
+tick_size = 14
+legend_size = 14
+
+colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
+
+hours = list(T)
 
 # ==========================================================
 # SENSITIVITY 1 — STORAGE ENERGY CAPACITY
 # ==========================================================
-# Vary total energy capacity E_max from 0 to 1000 MWh
-# Power limits scale proportionally at E/4 (C-rate of 0.25)
-# Observe how peak market price changes as more energy storage is available
 
-import numpy as np
-import matplotlib.pyplot as plt
+sizes = [0, 400, 500]
+results = {}
+storage_sizes = []     # FIX: was undefined
+peak_prices_E = []     # FIX: was undefined
 
-storage_sizes = np.linspace(0, 1000, 10)
-peak_prices_E = []
+for E in sizes:
+    P = E / 4 if E > 0 else 0
+    prices_list, charge, discharge, soc = run_market_model(P, P, E, plot_results=False)
+    results[E] = (prices_list, charge, discharge, soc)
+    storage_sizes.append(E)
+    peak_prices_E.append(max(prices_list))
 
-for E in storage_sizes:
-    prices = run_market_model(P_ch=E/4, P_dis=E/4, E_max=E)
-    peak_prices_E.append(max(prices.values()))
+# Price profiles
+fig, ax1 = plt.subplots(figsize=(12, 6))
 
+for i, E in enumerate(sizes):
+    prices_list = results[E][0]
+    ax1.plot(hours, prices_list,
+             marker=None,
+             color=colors[i],
+             linewidth=2,
+             label=f"E={E} MWh")
+
+ax1.set_xlabel("Hour", fontsize=label_size)
+ax1.set_ylabel("Price (€/MWh)", fontsize=label_size)
+ax1.tick_params(axis='both', which='major', labelsize=tick_size)
+ax1.grid(True, linestyle="--", alpha=0.6)
+ax1.legend(fontsize=legend_size)
+plt.tight_layout()
+plt.savefig("Results/Step2_storage_size_sensitivity.png")
+plt.close()
+
+# Peak price vs storage capacity
 plt.figure(figsize=(10, 5))
 plt.plot(storage_sizes, peak_prices_E, linewidth=2)
 plt.scatter(storage_sizes, peak_prices_E)
@@ -266,23 +421,20 @@ plt.title("Effect of Storage Energy Capacity on Peak Electricity Price")
 plt.xlabel("Storage Capacity (MWh)")
 plt.ylabel("Peak Market Price (€/MWh)")
 plt.grid(True)
-#plt.show()
-
+# plt.show()
+plt.savefig("Results/Step2_storage_capacity_peak.png")
+plt.close()
 
 # ==========================================================
 # SENSITIVITY 2 — CHARGING POWER LIMIT
 # ==========================================================
-# Vary max charging power P_ch from 0 to 400 MW
-# Discharging fixed at 100 MW, energy capacity fixed at 400 MWh
-# Higher charging power allows storage to absorb more excess generation,
-# potentially lowering peak prices by shifting energy to high-demand hours
 
 charging_limits = np.linspace(0, 400, 10)
-peak_prices_ch  = []
+peak_prices_ch = []
 
 for P in charging_limits:
-    prices = run_market_model(P_ch=P, P_dis=100, E_max=400)
-    peak_prices_ch.append(max(prices.values()))
+    prices_list, *_ = run_market_model(P_ch=P, P_dis=100, E_max=400)  # FIX: unpack tuple, not dict
+    peak_prices_ch.append(max(prices_list))
 
 plt.figure(figsize=(10, 5))
 plt.plot(charging_limits, peak_prices_ch, linewidth=2)
@@ -291,23 +443,53 @@ plt.title("Effect of Charging Power on Peak Electricity Price")
 plt.xlabel("Charging Power Limit (MW)")
 plt.ylabel("Peak Market Price (€/MWh)")
 plt.grid(True)
-#plt.show()
-
+# plt.show()
+plt.savefig("Results/Step2_charging_power_peak.png")
+plt.close()
 
 # ==========================================================
-# SENSITIVITY 3 — DISCHARGING POWER LIMIT
+# SENSITIVITY 3 — CHARGING POWER (price profiles)
 # ==========================================================
-# Vary max discharging power P_dis from 0 to 400 MW
-# Charging fixed at 100 MW, energy capacity fixed at 400 MWh
-# Higher discharging power allows storage to inject more power during peak hours,
-# reducing peak prices by supplementing generation capacity
 
-discharging_limits = np.linspace(0, 400, 10)
-peak_prices_dis    = []
+E_fixed = 400
+P_discharge_fixed = 100
+
+charge_sizes = [50, 100, 400]
+results_charge = {}
+
+for P_charge in charge_sizes:
+    results_charge[P_charge] = run_market_model(
+        P_charge, P_discharge_fixed, E_fixed, plot_results=False
+    )
+
+fig, ax1 = plt.subplots(figsize=(12, 6))
+
+for i, P_charge in enumerate(charge_sizes):
+    prices_list = results_charge[P_charge][0]
+    ax1.plot(hours, prices_list,
+             marker=None,
+             color=colors[i],
+             linewidth=2,
+             label=f"P_charge={P_charge} MW")
+
+ax1.set_xlabel("Hour")
+ax1.set_ylabel("Price (€/MWh)")
+ax1.grid(True, linestyle="--", alpha=0.6)
+ax1.legend()
+plt.tight_layout()
+plt.savefig("Results/Step2_Charging_power_sensitivity.png")
+plt.close()
+
+# ==========================================================
+# SENSITIVITY 4 — DISCHARGING POWER LIMIT
+# ==========================================================
+
+discharging_limits = np.linspace(0, 400, 10)   # FIX: was undefined
+peak_prices_dis = []                            # FIX: was undefined
 
 for P in discharging_limits:
-    prices = run_market_model(P_ch=100, P_dis=P, E_max=400)
-    peak_prices_dis.append(max(prices.values()))
+    prices_list, *_ = run_market_model(P_ch=100, P_dis=P, E_max=400)
+    peak_prices_dis.append(max(prices_list))
 
 plt.figure(figsize=(10, 5))
 plt.plot(discharging_limits, peak_prices_dis, linewidth=2)
@@ -316,4 +498,64 @@ plt.title("Effect of Discharging Power on Peak Electricity Price")
 plt.xlabel("Discharging Power Limit (MW)")
 plt.ylabel("Peak Market Price (€/MWh)")
 plt.grid(True)
-#plt.show()
+# plt.show()
+plt.savefig("Results/Step2_discharging_power_peak.png")
+plt.close()
+
+# ==========================================================
+# SENSITIVITY 5 — DISCHARGING POWER (price profiles)
+# ==========================================================
+
+P_charge_fixed = 100
+
+discharge_sizes = [50, 100, 400]
+results_discharge = {}
+
+for P_discharge in discharge_sizes:
+    results_discharge[P_discharge] = run_market_model(
+        P_charge_fixed, P_discharge, E_fixed, plot_results=False
+    )
+
+fig, ax1 = plt.subplots(figsize=(12, 6))
+
+for i, P_discharge in enumerate(discharge_sizes):
+    prices_list = results_discharge[P_discharge][0]
+    ax1.plot(hours, prices_list,
+             marker=None,
+             color=colors[i],
+             linewidth=2,
+             label=f"P_discharge={P_discharge} MW")
+
+ax1.set_xlabel("Hour")
+ax1.set_ylabel("Price (€/MWh)")
+ax1.grid(True, linestyle="--", alpha=0.6)
+ax1.legend()
+plt.tight_layout()
+plt.savefig("Results/Step2_discharging_power_sensitivity.png")
+plt.close()
+
+# ---------------------------------------------------------
+# TABLE: STORAGE SIZE SUMMARY
+# ---------------------------------------------------------
+
+summary_storage = []
+
+for E in sizes:
+    prices_list, charge, discharge, _ = results[E]
+
+    summary_storage.append({
+        "Storage Size (MWh)": E,
+        "Avg Price": np.mean(prices_list),
+        "Price Std": np.std(prices_list),
+        "Max Price": np.max(prices_list),
+        "Min Price": np.min(prices_list),
+        "Price Spread": np.max(prices_list) - np.min(prices_list),
+        "Total Charge (MWh)": sum(charge),
+        "Total Discharge (MWh)": sum(discharge)
+    })
+
+df_storage = pd.DataFrame(summary_storage)
+
+pd.set_option('display.max_columns', None)
+print("\n=== STORAGE SIZE SENSITIVITY ===")
+print(df_storage.round(2))
