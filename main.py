@@ -17,6 +17,7 @@ def run_notebook(notebook_path, hour):
     env                = os.environ.copy()
     env['HOUR']        = str(hour)
     env['PYTHONPATH']  = PROJECT_ROOT
+    env['DATA_DIR'] = os.path.join(PROJECT_ROOT, 'data_from_Jakob')
 
     result = subprocess.run(
         [
@@ -49,6 +50,7 @@ def run_py(script_path, hour):
     env               = os.environ.copy()
     env['HOUR']       = str(hour)
     env['PYTHONPATH'] = PROJECT_ROOT
+    env['DATA_DIR'] = os.path.join(PROJECT_ROOT, 'data_from_Jakob')
 
     result = subprocess.run(
         [sys.executable, script_path],
