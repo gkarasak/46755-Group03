@@ -29,7 +29,7 @@ Open a terminal in the project root and run:
 python main.py
 ```
 
-All results and plots are saved to the `Results/` folder automatically.
+All results and plots that are used in the report are saved to the `Results/` folder automatically, except for Step 2, where some results are displayed in the terminal but the plots are displayed in the `Results/` folder.
 
 ---
 
